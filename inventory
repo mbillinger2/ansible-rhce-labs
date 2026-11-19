@@ -1,0 +1,16 @@
+[development]
+mb-ansible1
+
+[testing]
+mb-ansible2
+
+[production]
+mb-ansible2
+mb-ansible3
+
+[proxy]
+mb-ansible4
+
+[webservers:children]
+production
+

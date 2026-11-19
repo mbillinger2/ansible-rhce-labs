@@ -1,0 +1,8 @@
+---
+roles:
+  - src: geerlingguy.haproxy
+    name: balancer
+
+  - src: geerlingguy.apache
+    name: webserver
+

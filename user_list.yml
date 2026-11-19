@@ -1,0 +1,17 @@
+---
+users:
+  - name: alice
+    job: developer
+    uid: 3101
+
+  - name: bob
+    job: developer
+    uid: 3102
+
+  - name: carol
+    job: admin
+    uid: 4101
+
+  - name: david
+    job: admin
+    uid: 4102

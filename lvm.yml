@@ -1,0 +1,48 @@
+---
+- name: LVM with Error Handling
+  hosts: all
+  become: true 
+  tasks:
+
+    - name: Create partition
+      community.general.parted:
+        device: /dev/sdb
+        number: 1
+        state: present
+        part_end: 1GiB
+
+    - name: Create the yellowtail VG
+      community.general.lvg:
+        vg: yellowtail
+        pvs: /dev/sdb1
+
+    - name: Display error message if yellowtail VG not present.
+      ansible.builtin.debug:
+        msg: "The yellowtail VG does not exist"
+      when: ansible_lvm.vgs.yellowtail is not defined
+
+    - name: Create a logical volume of 1500M
+      community.general.lvol:
+        vg: yellowtail
+        lv: data
+        size: 1500
+      when: ansible_lvm.vgs.yellowtail is defined and ansible_lvm.vgs.yellowtail.free_g > "1.5"
+
+    - name: Display error if 1500M not available on yellowtail VG
+      ansible.builtin.debug:
+        msg: "Could not create logical volume at that size"
+      when: ansible_lvm.vgs.yellowtail is defined and ansible_lvm.vgs.yellowtail.free_g < "1.5"
+
+    - name: Create 800 MiB logical volume
+      community.general.lvol:
+        vg: yellowtail
+        lv: data
+        size: 800
+      when: ansible_lvm.vgs.yellowtail is defined and ansible_lvm.vgs.yellowtail.free_g < "1.5"
+
+    - name: Format logical volume as ext4
+      community.general.filesystem:
+        fstype: ext4
+        dev: /dev/yellowtail/data
+      when: ansible_lvm.vgs.yellowtail is defined
+    

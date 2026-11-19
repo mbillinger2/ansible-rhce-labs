@@ -1,0 +1,44 @@
+---
+- name: Create User Accounts
+  hosts: all
+  become: true
+  vars_files:
+    - user_list.yml
+    - locker.yml
+  tasks:
+
+    - name: Ensure the developers group exists
+      ansible.builtin.group:
+        name: developers
+        state: present
+      when: inventory_hostname in groups['development'] or inventory_hostname in groups['testing']
+
+    - name: Ensure the managers group exists
+      ansible.builtin.group:
+        name: managers
+        state: present
+      when: inventory_hostname in groups['production']
+
+    - name: Create developer users
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        shell: /bin/bash
+        groups: developers
+        append: true
+        uid: "{{ item.uid }}"
+        state: present
+        password: "{{ pw_developer | password_hash('sha512') }}"
+      when: (inventory_hostname in groups['development'] and item.job == 'developer') or (inventory_hostname in groups['testing'] and item.job == 'developer')
+      loop: "{{ users }}"
+
+    - name: Create admin users
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        shell: /bin/bash
+        groups: managers
+        append: true
+        uid: "{{ item.uid }}"
+        state: present
+        password: "{{ pw_manager | password_hash('sha512') }}"
+      when: inventory_hostname in groups['production'] and item.job == 'admin'
+      loop: "{{ users }}"

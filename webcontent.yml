@@ -1,0 +1,63 @@
+---
+- name: Web Content configuration
+  hosts: development
+  become: true
+  tasks:
+    
+    - name: Enable http service on the firewall
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        state: enabled
+        immediate: true
+
+    - name: Enable port 80  on the firewall
+      ansible.posix.firewalld:
+        port: 80/tcp
+        permanent: true
+        state: enabled
+        immediate: true
+
+    - name: Install httpd, firewalld
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - httpd
+        - firewalld
+
+    - name: Start and enable httpd, firewalld
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - httpd
+        - firewalld
+
+    - name: Create webdev directory
+      ansible.builtin.file:
+        path: /webdev
+        state: directory
+        group: developers
+        mode: '2775'
+        setype: httpd_sys_content_t
+
+    - name: Create index.html with single line of text
+      ansible.builtin.copy:
+        dest: /webdev/index.html
+        content: 'Development'
+        setype: httpd_sys_content_t
+
+    - name: Ensure Apache document root exists
+      ansible.builtin.file:
+        path: /var/www/html
+        state: directory
+        mode: '0755'
+
+    - name: Create a symbolic link
+      ansible.builtin.file:
+        src: /webdev
+        dest: /var/www/html/webdev
+        state: link
+        setype: httpd_sys_content_t

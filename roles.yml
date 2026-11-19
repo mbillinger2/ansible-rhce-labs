@@ -1,0 +1,68 @@
+---
+- name: Use webserver galaxy role
+  hosts: webservers
+  become: true
+  roles:
+    - webserver
+  
+  tasks:
+    - name: Ensure Apache and firewalld is installed
+      ansible.builtin.dnf:
+        name: 
+          - httpd
+          - firewalld
+        state: present
+
+    - name: Ensure apache and firewalld are started and enabled at boot.
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop: 
+        - httpd
+        - firewalld 
+
+    - name: Permanently allow http service through firewall
+      ansible.posix.firewalld:
+        service: http
+        state: enabled
+        permanent: true
+        immediate: true
+
+    - name: Create /var/www/html/index.html from template
+      ansible.builtin.template:
+        src: /home/sysadmin/ansible/roles/webserver/templates/index.html.j2
+        dest: /var/www/html/index.html
+
+- name: Use balancer galaxy role
+  hosts: proxy
+  become: true
+  vars:
+    haproxy_backend_servers:
+      - name: mb-ansible2
+        address: "{{ hostvars['mb-ansible2']['ansible_facts']['default_ipv4']['address'] }}:80"
+      - name: mb-ansible3
+        address: "{{ hostvars['mb-ansible3']['ansible_facts']['default_ipv4']['address'] }}:80"
+  roles:
+    - balancer
+
+  tasks:
+    - name: Ensure firewalld is installed
+      ansible.builtin.dnf:
+        name: firewalld
+        state: present
+
+    - name: Ensure firewalld is started and enabled
+      ansible.builtin.service:
+        name: firewalld
+        state: started
+        enabled: true
+
+    - name: Allow port 80 through firewall
+      ansible.posix.firewalld:
+        port: 80/tcp
+        state: enabled
+        permanent: true
+        immediate: true
+
+

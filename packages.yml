@@ -1,0 +1,25 @@
+---
+- name: Manage Packages
+  hosts: development:testing:production
+  become: true
+  tasks:
+
+    - name: Install nodejs and git on development,testing, and production groups
+      ansible.builtin.dnf:
+        name:
+          - nodejs
+          - git
+        state: present
+
+    - name: Install development tools package on development group
+      ansible.builtin.dnf:
+        name: '@Development Tools'
+        state: present
+      when: inventory_hostname in groups['development']
+
+    - name: Update all packages to the latest version on hosts in the development group
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest
+      when: inventory_hostname in groups['development']
+

@@ -1,0 +1,23 @@
+---
+- name: Update ssh server config
+  hosts: all
+  become: true
+  tasks:
+
+    - name: Update sshd config
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#X11Forwarding no'
+        line: 'X11Forwarding yes'
+        regexp: '^#MaxSessions 10'
+        line: 'MaxSessions 10'
+        regexp: '^#Banner none'
+        line: 'Banner none'
+      notify: Restart sshd
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+       

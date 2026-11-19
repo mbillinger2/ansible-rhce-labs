@@ -1,0 +1,29 @@
+---
+- name: Generate a Hardware Report
+  hosts: all
+  become: true
+  tasks:
+    - name: Download hwreport.empty
+      ansible.builtin.get_url:
+        url: http://192.168.1.76/hwreport.empty
+        dest: /root/hwreport.txt
+        mode: '0644'
+        force: true
+
+    - name: Generate hardware report using ansible facts
+      ansible.builtin.lineinfile:
+        path: /root/hwreport.txt
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - regexp: '^HOST='
+          line: "HOST={{ inventory_hostname }}"
+        - regexp: '^MEMORY='
+          line: "MEMORY={{ ansible_facts['memtotal_mb'] | default('NONE') }}"
+        - regexp: '^BIOS='
+          line: "BIOS={{ ansible_facts['bios_version'] | default('NONE', true) }}"
+        - regexp: '^VDA_DISK_SIZE='
+          line: "SDA_DISK_SIZE={{ ansible_facts['devices']['sda']['size'] | default('NONE') }}" 
+        - regexp: '^VDB_DISK_SIZE='
+          line: "SDB_DISK_SIZE={{ ansible_facts['devices']['sdb']['size'] | default('NONE') }}" 
+

@@ -1,0 +1,10 @@
+---
+- name: Manage timesync
+  hosts: masternode
+  become: true
+  vars:
+    timesync_ntp_servers:
+      - hostname: 2.north-america.pool.ntp.org
+        iburst: true
+  roles:
+    - rhel-system-roles.timesync
